@@ -15,13 +15,21 @@
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "POST, OPTIONS",
         "Access-Control-Allow-Headers": "x-vercel-signature, content-type",
-        "bypass-auth": "1"
+        "bypass-auth": "1",
+        "x-vercel-skip-auth": "1"
       }
     },
     {
       "src": "/healthz",
       "dest": "api/index.py",
-      "methods": ["GET"]
+      "methods": ["GET"],
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET",
+        "bypass-auth": "1",
+        "x-vercel-skip-auth": "1"
+      }
     }
-  ]
+  ],
+  "public": true
 }
