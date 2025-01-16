@@ -37,6 +37,7 @@ cp .env.example .env
 
 4. Configure the following environment variables:
 - `WEBHOOK_SECRET`: Secret for validating webhook signatures
+- `WEBHOOK_DOMAIN`: Webhook receiving domain (default: vercel5-mocha.vercel.app)
 - `OKX_API_KEY`: Your OKX API key
 - `OKX_SECRET_KEY`: Your OKX API secret key
 - `OKX_PASSPHRASE`: Your OKX API passphrase
