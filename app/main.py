@@ -1,11 +1,11 @@
 from fastapi import FastAPI, Request, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-import psycopg
 import logging
 import json
 from datetime import datetime
 from typing import Dict, Any
+from mangum import Adapter
 
 from .models import WebhookMessage
 from .config import get_settings
@@ -208,3 +208,6 @@ async def http_exception_handler(request: Request, exc: HTTPException):
         status_code=exc.status_code,
         content={"status": "error", "detail": exc.detail}
     )
+
+# Create handler for AWS Lambda / Vercel
+handler = Adapter(app, lifespan="off")
