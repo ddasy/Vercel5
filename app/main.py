@@ -15,6 +15,9 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
+
+# Set higher log level for health check endpoint
+logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
@@ -60,6 +63,7 @@ async def validate_webhook_signature(request: Request) -> bool:
 
 @app.get("/healthz")
 async def healthz():
+    """Health check endpoint with minimal logging."""
     return {"status": "ok"}
 
 @app.post("/webhook")
@@ -85,7 +89,9 @@ async def webhook_handler(request: Request):
                 content={"status": "error", "detail": "Invalid webhook signature"}
             )
         
-        logger.info(f"Received webhook message: {json.dumps(body, indent=2)}")
+        # Only log detailed webhook messages for /webhook endpoint
+        if request.url.path == "/webhook":
+            logger.info(f"Received webhook message: {json.dumps(body, indent=2)}")
         
         # Create WebhookMessage instance for validation
         message = WebhookMessage(
@@ -157,9 +163,9 @@ async def webhook_handler(request: Request):
             
             response = response_handler.format_response(
                 message=processed_message,
-                okx_response=recovery_response,
+                okx_response={} if recovery_response is None else recovery_response,
                 success=bool(recovery_response),
-                error=str(e) if not recovery_response else None
+                error=str(e) if recovery_response is None else None
             )
             
             if not recovery_response:
@@ -179,7 +185,7 @@ async def webhook_handler(request: Request):
             
             response = response_handler.format_response(
                 message=processed_message,
-                okx_response=None,
+                okx_response={},  # Empty dict instead of None
                 success=False,
                 error=f"Internal error: {str(e)}"
             )
