@@ -1,0 +1,35 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/index.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/webhook",
+      "dest": "api/index.py",
+      "methods": ["POST", "OPTIONS"],
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "x-vercel-signature, content-type",
+        "bypass-auth": "1",
+        "x-vercel-skip-auth": "1"
+      }
+    },
+    {
+      "src": "/healthz",
+      "dest": "api/index.py",
+      "methods": ["GET"],
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET",
+        "bypass-auth": "1",
+        "x-vercel-skip-auth": "1"
+      }
+    }
+  ],
+  "public": true
+}
