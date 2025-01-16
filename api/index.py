@@ -1,14 +1,17 @@
-from fastapi import FastAPI, Request, HTTPException, Depends
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import logging
-import json
 from datetime import datetime
-from typing import Dict, Any
+import json
 from mangum import Adapter
 
-from .models import WebhookMessage
-from .config import get_settings
+from app.models import WebhookMessage
+from app.config import get_settings
+from app.services.message_filter import MessageFilter
+from app.services.okx_api import OKXAPIClient, OKXAPIError
+from app.services.response_handler import ResponseHandler
+from app.services.error_handler import error_handler, APIError
 
 # Configure logging
 logging.basicConfig(
@@ -19,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
-# Disable CORS. Do not remove this for full-stack development.
+# Configure CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -28,8 +31,8 @@ app.add_middleware(
         "https://*.vercel.app"
     ],
     allow_credentials=True,
-    allow_methods=["*"],  # Allows all methods
-    allow_headers=["*"]  # Allows all headers
+    allow_methods=["*"],
+    allow_headers=["*"]
 )
 
 async def validate_webhook_signature(request: Request) -> bool:
@@ -47,18 +50,15 @@ async def validate_webhook_signature(request: Request) -> bool:
         logger.warning("Missing x-vercel-signature header")
         return False
     
-    # Get raw body and convert to string for signature validation
     body = await request.body()
     body_str = body.decode('utf-8')
     
-    # Create HMAC SHA1 hash
     hmac_obj = hmac.new(
         key=settings.WEBHOOK_SECRET.encode('utf-8'),
         msg=body_str.encode('utf-8'),
         digestmod=hashlib.sha1
     )
     
-    # Compare signatures
     expected_signature = hmac_obj.hexdigest()
     return hmac.compare_digest(signature, expected_signature)
 
@@ -70,7 +70,6 @@ async def healthz():
 async def webhook_handler(request: Request):
     """Handle incoming webhook messages from Vercel."""
     try:
-        # Parse request body first to avoid signature validation on invalid JSON
         try:
             body = await request.json()
         except json.JSONDecodeError:
@@ -80,7 +79,6 @@ async def webhook_handler(request: Request):
                 content={"status": "error", "detail": "Invalid JSON payload"}
             )
 
-        # Validate webhook signature
         is_valid = await validate_webhook_signature(request)
         if not is_valid:
             logger.warning("Invalid webhook signature")
@@ -91,15 +89,12 @@ async def webhook_handler(request: Request):
         
         logger.info(f"Received webhook message: {json.dumps(body, indent=2)}")
         
-        # Create WebhookMessage instance for validation
         message = WebhookMessage(
             sender=body.get("sender", "unknown"),
             content=body.get("content"),
             timestamp=datetime.now()
         )
         
-        # Filter and validate message
-        from .services.message_filter import MessageFilter
         message_filter = MessageFilter()
         is_valid, error_msg, processed_message = message_filter.filter_message(message)
         
@@ -111,34 +106,20 @@ async def webhook_handler(request: Request):
             )
             
         logger.info("Message passed filtering")
-        
-        # Store processed message for forwarding
         request.state.processed_message = processed_message
         
-        # Forward message to OKX API
-        from .services.okx_api import OKXAPIClient, OKXAPIError
-        from .services.response_handler import ResponseHandler
-        from .services.error_handler import error_handler, APIError
-        import time
-        
         response_handler = ResponseHandler()
-        start_time = time.time()
+        start_time = datetime.now().timestamp()
         
         try:
             okx_client = OKXAPIClient()
-            
-            # Log request details before processing
             response_handler.log_request_details(processed_message, "OKX API")
-            
-            # Forward message
             result = await okx_client.forward_message(processed_message)
             await okx_client.close()
             
-            # Calculate response time and log metrics
-            response_time = time.time() - start_time
+            response_time = datetime.now().timestamp() - start_time
             response_handler.log_response_metrics(response_time, "OKX API")
             
-            # Format and sanitize response
             response = response_handler.format_response(
                 message=processed_message,
                 okx_response=result,
@@ -151,10 +132,9 @@ async def webhook_handler(request: Request):
             )
             
         except OKXAPIError as e:
-            response_time = time.time() - start_time
+            response_time = datetime.now().timestamp() - start_time
             response_handler.log_response_metrics(response_time, "OKX API")
             
-            # Try to recover from API error
             recovery_response = error_handler.recover_from_error(
                 APIError(str(e), {"endpoint": "OKX API"})
             )
@@ -178,7 +158,7 @@ async def webhook_handler(request: Request):
             )
             
         except Exception as e:
-            response_time = time.time() - start_time
+            response_time = datetime.now().timestamp() - start_time
             response_handler.log_response_metrics(response_time, "OKX API")
             
             response = response_handler.format_response(

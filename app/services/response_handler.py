@@ -31,17 +31,18 @@ class ResponseHandler:
 
     def format_response(
         self,
-        message: WebhookMessage,
-        okx_response: Dict[str, Any],
+        message: Optional[WebhookMessage],
+        okx_response: Optional[Dict[str, Any]],
         success: bool,
         error: Optional[str] = None
     ) -> Dict[str, Any]:
         """Format response for logging and client feedback."""
+        current_time = datetime.now().isoformat()
         response = {
-            "timestamp": datetime.now().isoformat(),
-            "request_id": str(hash(f"{message.sender}{message.timestamp.isoformat()}")),
+            "timestamp": current_time,
+            "request_id": str(hash(f"{current_time}")),
             "status": "success" if success else "error",
-            "sender": message.sender,
+            "sender": message.sender if message else "unknown",
             "processing_result": {
                 "success": success,
                 "error_message": error if error else None,
@@ -64,8 +65,12 @@ class ResponseHandler:
         
         return response
 
-    def log_request_details(self, message: WebhookMessage, endpoint: str) -> None:
+    def log_request_details(self, message: Optional[WebhookMessage], endpoint: str) -> None:
         """Log details about the request being processed."""
+        if not message:
+            logger.warning("Attempted to log details for None message")
+            return
+            
         logger.info(
             f"Processing request - "
             f"Sender: {message.sender}, "

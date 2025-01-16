@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     
     # Webhook Configuration
     WEBHOOK_SECRET: str = ""  # For verifying webhook signatures
+    WEBHOOK_DOMAIN: str = "vercel5-mocha.vercel.app"  # Webhook receiving domain
     
     class Config:
         env_file = ".env"

@@ -129,9 +129,12 @@ class OKXAPIClient:
         # Default to a safe, read-only endpoint
         return "market/tickers", {"instId": "BTC-USDT"}
 
-    async def forward_message(self, message: WebhookMessage) -> Dict[str, Any]:
+    async def forward_message(self, message: Optional[WebhookMessage]) -> Dict[str, Any]:
         """Forward processed message to appropriate OKX API endpoint."""
         try:
+            if not message:
+                raise OKXAPIError("Message cannot be None")
+
             # Determine endpoint and format data based on message content
             endpoint, base_data = self._determine_endpoint(message.content)
             
