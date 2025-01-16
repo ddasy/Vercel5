@@ -1,15 +1,13 @@
-# Webhook to OKX API Forwarder
+# Webhook Message Receiver
 
-A FastAPI-based service that receives webhook messages from Vercel and forwards them to the OKX API with proper authentication, filtering, and error handling.
+A FastAPI-based service that receives webhook messages from Vercel, with message validation and error handling.
 
 ## Features
 
-- Webhook message reception and validation
-- Message content filtering and sanitization
-- Secure OKX API integration with authentication
-- Comprehensive error handling and retry mechanism
-- Detailed logging and monitoring
-- Test coverage at 84%
+- Secure webhook message reception
+- Message validation and signature verification
+- Error handling and logging
+- HTTPS endpoint at vercel5-mocha.vercel.app
 
 ## Requirements
 
@@ -19,51 +17,35 @@ A FastAPI-based service that receives webhook messages from Vercel and forwards 
 
 ## Installation
 
-1. Clone the repository:
-```bash
-git clone https://github.com/ddasy/Vercel.git
-cd Vercel
-```
-
-2. Install dependencies using Poetry:
+1. Install dependencies:
 ```bash
 poetry install
 ```
 
-3. Copy `.env.example` to `.env` and fill in your credentials:
+2. Copy `.env.example` to `.env` and configure:
 ```bash
 cp .env.example .env
 ```
 
-4. Configure the following environment variables:
+3. Configure the following environment variables:
 - `WEBHOOK_SECRET`: Secret for validating webhook signatures
 - `WEBHOOK_DOMAIN`: Webhook receiving domain (default: vercel5-mocha.vercel.app)
-- `OKX_API_KEY`: Your OKX API key
-- `OKX_SECRET_KEY`: Your OKX API secret key
-- `OKX_PASSPHRASE`: Your OKX API passphrase
-- `OKX_API_URL`: OKX API URL (defaults to production)
 
 ## Usage
 
-1. Start the server:
+1. Start the development server:
 ```bash
 poetry run uvicorn app.main:app --reload
 ```
 
-2. Send POST requests to `/webhook` endpoint with:
+2. Send POST requests to `https://vercel5-mocha.vercel.app/webhook` with:
 - JSON payload containing `sender`, `content`, and optional `timestamp`
 - `x-vercel-signature` header for webhook validation
 
-## Testing
+## API Endpoints
 
-Run tests with coverage:
-```bash
-poetry run pytest tests/ -v --cov=app
-```
-
-## Version
-
-Current version: 1.0.4
+- `GET /healthz` - Health check endpoint
+- `POST /webhook` - Webhook endpoint for receiving messages
 
 ## License
 
