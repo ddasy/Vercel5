@@ -9,15 +9,19 @@
   "routes": [
     {
       "src": "/webhook",
-      "dest": "api/index.py"
+      "dest": "api/index.py",
+      "methods": ["POST", "OPTIONS"],
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "x-vercel-signature, content-type",
+        "bypass-auth": "1"
+      }
     },
     {
       "src": "/healthz",
-      "dest": "api/index.py"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "api/index.py"
+      "dest": "api/index.py",
+      "methods": ["GET"]
     }
   ]
 }
