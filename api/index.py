@@ -1,6 +1,8 @@
 import sys
 import os
 import logging
+from mangum import Mangum
+from app.main import app
 
 # Configure logging
 logging.basicConfig(
@@ -15,20 +17,6 @@ if project_root not in sys.path:
     sys.path.append(project_root)
     logger.info(f"Python path set to: {project_root}")
 logger.info(f"Current sys.path: {sys.path}")
-
-try:
-    from mangum import Mangum
-    logger.info("Successfully imported mangum")
-except ImportError as e:
-    logger.error(f"Failed to import mangum: {str(e)}")
-    raise
-
-try:
-    from app.main import app
-    logger.info("Successfully imported FastAPI app")
-except ImportError as e:
-    logger.error(f"Failed to import FastAPI app: {str(e)}")
-    raise
 
 # Create handler
 handler = Mangum(app, lifespan="off")
