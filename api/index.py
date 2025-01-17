@@ -17,7 +17,7 @@ if project_root not in sys.path:
 logger.info(f"Current sys.path: {sys.path}")
 
 try:
-    import mangum
+    from mangum import Mangum
     logger.info("Successfully imported mangum")
 except ImportError as e:
     logger.error(f"Failed to import mangum: {str(e)}")
@@ -30,9 +30,5 @@ except ImportError as e:
     logger.error(f"Failed to import FastAPI app: {str(e)}")
     raise
 
-try:
-    handler = mangum.Mangum(app, lifespan="off")
-    logger.info("Successfully created Mangum handler")
-except Exception as e:
-    logger.error(f"Error initializing application: {str(e)}")
-    raise
+# Create handler
+handler = Mangum(app, lifespan="off")
